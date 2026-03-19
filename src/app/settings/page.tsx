@@ -280,9 +280,19 @@ export default function SettingsPage() {
                     onChange={(value) => setBrandField("salon_name", value)}
                   />
                   <FormField
+                    label="Business Address"
+                    value={settings.brand.business_address}
+                    onChange={(value) => setBrandField("business_address", value)}
+                  />
+                  <FormField
                     label="Default Location"
                     value={settings.brand.default_location}
                     onChange={(value) => setBrandField("default_location", value)}
+                  />
+                  <FormField
+                    label="Business Niche"
+                    value={settings.brand.business_niche}
+                    onChange={(value) => setBrandField("business_niche", value)}
                   />
                 </div>
                 <div className="mt-4">
@@ -305,6 +315,30 @@ export default function SettingsPage() {
                     label="Default Tone"
                     value={settings.brand.default_tone}
                     onChange={(value) => setBrandField("default_tone", value)}
+                  />
+                  <TextAreaField
+                    label="Target Audience"
+                    value={settings.brand.target_audience}
+                    onChange={(value) => setBrandField("target_audience", value)}
+                    rows={3}
+                  />
+                  <TextAreaField
+                    label="Brand Themes"
+                    value={settings.brand.brand_themes}
+                    onChange={(value) => setBrandField("brand_themes", value)}
+                    rows={4}
+                  />
+                  <TextAreaField
+                    label="Recruiting Message"
+                    value={settings.brand.recruiting_message}
+                    onChange={(value) => setBrandField("recruiting_message", value)}
+                    rows={4}
+                  />
+                  <TextAreaField
+                    label="Content Buckets"
+                    value={settings.brand.content_buckets}
+                    onChange={(value) => setBrandField("content_buckets", value)}
+                    rows={5}
                   />
                   <FormField
                     label="Instagram Handle"
@@ -446,6 +480,32 @@ function NumberField({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+      />
+    </div>
+  );
+}
+
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  rows = 4,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </label>
+      <textarea
+        value={value}
+        rows={rows}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm leading-relaxed focus:border-slate-400 focus:outline-none"
       />
     </div>
   );

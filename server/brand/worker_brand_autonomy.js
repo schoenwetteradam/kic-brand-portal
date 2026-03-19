@@ -2,6 +2,7 @@
 require("dotenv").config();
 const pool = require("./db");
 const { generateBrandContent } = require("./openai_brand");
+const { generateAgentTaskResult } = require("./agent_tasks");
 
 const DEFAULT_TARGETS = [
   {
@@ -141,7 +142,63 @@ async function runJob(job) {
   throw new Error(`Unsupported job_type: ${job.job_type}`);
 }
 
+async function processAgentTasks() {
+  const tasks = await pool.query(
+    `
+    select id, mode, role, location, message
+    from agent_tasks
+    where status = 'queued'
+    order by created_at asc
+    limit 10
+    `
+  );
+
+  for (const task of tasks.rows) {
+    try {
+      await pool.query(
+        `
+        update agent_tasks
+        set status = 'running',
+            started_at = now()
+        where id = $1
+        `,
+        [task.id]
+      );
+
+      const result = await generateAgentTaskResult(task);
+
+      await pool.query(
+        `
+        update agent_tasks
+        set status = 'completed',
+            result = $2::jsonb,
+            completed_at = now()
+        where id = $1
+        `,
+        [task.id, JSON.stringify(result)]
+      );
+
+      console.log(`Completed agent task ${task.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await pool.query(
+        `
+        update agent_tasks
+        set status = 'failed',
+            error_text = $2,
+            completed_at = now()
+        where id = $1
+        `,
+        [task.id, message]
+      );
+      console.error(`Failed agent task ${task.id}:`, message);
+    }
+  }
+}
+
 async function run() {
+  await processAgentTasks();
+
   const dueJobs = await pool.query(
     `
     select id, job_type, payload

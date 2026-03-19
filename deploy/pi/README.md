@@ -68,4 +68,5 @@ sudo systemctl enable --now kic-brand-worker
 - lead follow-up jobs
 - content batch generation
 - queue processing from `automation_jobs`
+- agent task processing from `agent_tasks`
 - internal API endpoints for the Vercel portal

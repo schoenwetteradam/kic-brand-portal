@@ -111,6 +111,25 @@ create table if not exists automation_jobs (
 
 create index if not exists idx_automation_jobs_status_run_at on automation_jobs(status, run_at);
 
+create table if not exists agent_tasks (
+  id uuid primary key default gen_random_uuid(),
+  mode text not null
+    check (mode in ('strategy','research','content','schedule')),
+  role text not null default 'general',
+  location text not null,
+  message text not null default '',
+  status text not null default 'queued'
+    check (status in ('queued','running','completed','failed','approved','rejected')),
+  result jsonb,
+  error_text text,
+  started_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_agent_tasks_status_created_at on agent_tasks(status, created_at desc);
+
 create table if not exists brand_metrics_daily (
   id uuid primary key default gen_random_uuid(),
   metric_date date not null,
@@ -152,4 +171,9 @@ for each row execute function set_updated_at();
 drop trigger if exists trg_brand_templates_updated_at on brand_templates;
 create trigger trg_brand_templates_updated_at
 before update on brand_templates
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_agent_tasks_updated_at on agent_tasks;
+create trigger trg_agent_tasks_updated_at
+before update on agent_tasks
 for each row execute function set_updated_at();

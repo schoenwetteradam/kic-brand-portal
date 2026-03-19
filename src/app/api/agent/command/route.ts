@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { RoleType } from "@/src/types/brand";
-
-type AgentMode = "strategy" | "research" | "content" | "schedule";
-
-type AgentCommandRequest = {
-  message?: string;
-  mode?: AgentMode;
-  role?: RoleType | "general";
-  location?: string;
-};
+import type { AgentCommandRequest, AgentCommandResponse, AgentMode, AgentTaskRecord } from "@/src/types/agent";
+import { PI_BASE_URL, PI_API_KEY, isPiConfigured } from "@/src/lib/pi";
 
 type CampaignBrief = {
   title: string;
@@ -23,16 +16,6 @@ type ScheduleItem = {
   content_type: string;
   theme: string;
   cta: string;
-};
-
-type AgentCommandResponse = {
-  mode: AgentMode;
-  summary: string;
-  priorities: string[];
-  recommendations: string[];
-  campaigns: CampaignBrief[];
-  content_plan: ScheduleItem[];
-  next_actions: string[];
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -240,6 +223,35 @@ export async function POST(req: NextRequest) {
   const location = body.location?.trim() || DEFAULT_LOCATION;
   const message = body.message?.trim() || "";
 
+  if (isPiConfigured()) {
+    try {
+      const response = await fetch(`${PI_BASE_URL}/brand/agent/tasks`, {
+        method: "POST",
+        headers: {
+          "x-api-key": PI_API_KEY,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          mode,
+          role,
+          location,
+          message,
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return NextResponse.json({
+          task: data.task,
+          queued: true,
+        });
+      }
+    } catch {
+      // fall through to local immediate generation
+    }
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (apiKey) {
@@ -267,17 +279,47 @@ export async function POST(req: NextRequest) {
       if (response.ok) {
         const data = await response.json();
         const parsed = JSON.parse(data.choices[0].message.content) as AgentCommandResponse;
-        return NextResponse.json({
-          ...parsed,
+        const immediateTask: AgentTaskRecord = {
+          id: `local_${Date.now()}`,
           mode,
-        } satisfies AgentCommandResponse);
+          role,
+          location,
+          message,
+          status: "completed",
+          created_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          result: {
+            ...parsed,
+            mode,
+          } satisfies AgentCommandResponse,
+        };
+
+        return NextResponse.json({
+          task: immediateTask,
+          queued: false,
+        });
       }
     } catch {
       // Fall back to deterministic local response
     }
   }
 
+  const immediateTask: AgentTaskRecord = {
+    id: `local_${Date.now()}`,
+    mode,
+    role,
+    location,
+    message,
+    status: "completed",
+    created_at: new Date().toISOString(),
+    completed_at: new Date().toISOString(),
+    result: buildFallbackResponse({ mode, role, location, message }),
+  };
+
   return NextResponse.json(
-    buildFallbackResponse({ mode, role, location, message })
+    {
+      task: immediateTask,
+      queued: false,
+    }
   );
 }

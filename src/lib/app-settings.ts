@@ -18,12 +18,18 @@ export type AppSettings = {
   };
   brand: {
     salon_name: string;
+    business_address: string;
+    business_niche: string;
     default_location: string;
     service_areas: string;
     default_cta: string;
     default_tone: string;
     instagram_handle: string;
     facebook_page: string;
+    target_audience: string;
+    brand_themes: string;
+    recruiting_message: string;
+    content_buckets: string;
   };
 };
 
@@ -46,13 +52,22 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     daily_content_goal: 4,
   },
   brand: {
-    salon_name: "Keeping It cUte Salon & Spa",
+    salon_name: "Keeping It Cute Salon & Spa",
+    business_address: "144 East Oak Street, Juneau, WI 53039",
+    business_niche: "Thriving vegan-based salon and spa for beauty professionals and clients who value clean beauty, growth, and community.",
     default_location: "Dodge County, WI",
-    service_areas: "Juneau, Beaver Dam, Watertown, Dodge County",
-    default_cta: "DM us 'BOOTH' or apply through the link in bio",
-    default_tone: "Warm and welcoming",
+    service_areas: "Juneau, Beaver Dam, Watertown, Dodge County, and surrounding communities",
+    default_cta: "DM us 'BOOTH' or book a tour to learn more about booth rental opportunities",
+    default_tone: "Elevated, welcoming, empowering, modern, vegan-conscious, and professional",
     instagram_handle: "@keepingitcutesalon",
     facebook_page: "Keeping It Cute Salon",
+    target_audience: "Cosmetologists, estheticians, massage therapists, lash artists, and nail technicians who want a supportive place to grow an independent beauty business.",
+    brand_themes:
+      "vegan-based, clean beauty, welcoming, elevated, growth-minded, community-focused, professional but warm, empowering independent beauty professionals",
+    recruiting_message:
+      "Join a thriving, vegan-based salon environment where beauty professionals can grow their business in a supportive, stylish, and professional setting.",
+    content_buckets:
+      "booth renter recruitment posts, why join us posts, salon culture posts, behind-the-scenes brand lifestyle content, local hiring and recruiting content, stylist and artist spotlight templates, Meta and Instagram ad concepts, short video and reel concepts, weekly recruiting plans",
   },
 };
 

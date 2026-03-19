@@ -3,6 +3,7 @@ const express = require("express");
 const pool = require("./db");
 const { requireInternalApiKey } = require("./middleware_api_key");
 const { generateBrandContent } = require("./openai_brand");
+const { generateAgentTaskResult } = require("./agent_tasks");
 
 const router = express.Router();
 
@@ -714,6 +715,182 @@ router.post("/leads/:id/followup", async (req, res) => {
   } catch (err) {
     console.error("POST /brand/leads/:id/followup error:", err);
     res.status(500).json({ ok: false, error: "Failed to log follow-up" });
+  }
+});
+
+router.get("/agent/tasks", async (_req, res) => {
+  try {
+    const q = await pool.query(
+      `
+      select
+        id,
+        mode,
+        role,
+        location,
+        message,
+        status,
+        result,
+        error_text as "errorText",
+        started_at as "startedAt",
+        completed_at as "completedAt",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      from agent_tasks
+      order by created_at desc
+      limit 100
+      `
+    );
+
+    res.json(q.rows);
+  } catch (err) {
+    console.error("GET /brand/agent/tasks error:", err);
+    res.status(500).json({ ok: false, error: "Failed to load agent tasks" });
+  }
+});
+
+router.post("/agent/tasks", async (req, res) => {
+  try {
+    const {
+      mode = "strategy",
+      role = "general",
+      location = "Juneau, WI",
+      message = "",
+      runNow = false,
+    } = req.body || {};
+
+    const insert = await pool.query(
+      `
+      insert into agent_tasks (mode, role, location, message, status)
+      values ($1, $2, $3, $4, 'queued')
+      returning
+        id,
+        mode,
+        role,
+        location,
+        message,
+        status,
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      `,
+      [mode, role, location, message]
+    );
+
+    const task = insert.rows[0];
+
+    if (!runNow) {
+      return res.status(201).json({ ok: true, task });
+    }
+
+    try {
+      await pool.query(
+        `
+        update agent_tasks
+        set status = 'running',
+            started_at = now()
+        where id = $1
+        `,
+        [task.id]
+      );
+
+      const result = await generateAgentTaskResult({
+        mode,
+        role,
+        location,
+        message,
+      });
+
+      const updated = await pool.query(
+        `
+        update agent_tasks
+        set status = 'completed',
+            result = $2::jsonb,
+            completed_at = now()
+        where id = $1
+        returning
+          id,
+          mode,
+          role,
+          location,
+          message,
+          status,
+          result,
+          error_text as "errorText",
+          started_at as "startedAt",
+          completed_at as "completedAt",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        `,
+        [task.id, JSON.stringify(result)]
+      );
+
+      return res.status(201).json({ ok: true, task: updated.rows[0] });
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : String(err);
+      await pool.query(
+        `
+        update agent_tasks
+        set status = 'failed',
+            error_text = $2,
+            completed_at = now()
+        where id = $1
+        `,
+        [task.id, messageText]
+      );
+
+      return res.status(201).json({
+        ok: false,
+        task: {
+          ...task,
+          status: "failed",
+          errorText: messageText,
+        },
+      });
+    }
+  } catch (err) {
+    console.error("POST /brand/agent/tasks error:", err);
+    res.status(500).json({ ok: false, error: "Failed to create agent task" });
+  }
+});
+
+router.patch("/agent/tasks/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ ok: false, error: "Invalid status" });
+    }
+
+    const q = await pool.query(
+      `
+      update agent_tasks
+      set status = $2
+      where id = $1
+      returning
+        id,
+        mode,
+        role,
+        location,
+        message,
+        status,
+        result,
+        error_text as "errorText",
+        started_at as "startedAt",
+        completed_at as "completedAt",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      `,
+      [id, status]
+    );
+
+    if (!q.rowCount) {
+      return res.status(404).json({ ok: false, error: "Agent task not found" });
+    }
+
+    res.json({ ok: true, task: q.rows[0] });
+  } catch (err) {
+    console.error("PATCH /brand/agent/tasks/:id error:", err);
+    res.status(500).json({ ok: false, error: "Failed to update agent task" });
   }
 });
 

@@ -1,5 +1,5 @@
 function requireInternalApiKey(req, res, next) {
-  const expected = process.env.INTERNAL_API_KEY || "";
+  const expected = process.env.INTERNAL_API_KEY || process.env.PI_API_KEY || "";
   const provided = req.headers["x-api-key"];
 
   if (!expected) {
