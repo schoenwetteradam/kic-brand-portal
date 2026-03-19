@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTopServices } from "@/lib/pi-client";
+import { getTopServices } from "@/src/lib/pi-client";
 
 export async function GET() {
   try {
