@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PI_BASE_URL = process.env.PI_BASE_URL;
-const PI_API_KEY = process.env.PI_API_KEY;
-
-async function piRequest(path: string, options?: RequestInit) {
-  if (!PI_BASE_URL || !PI_API_KEY) throw new Error("Pi not configured");
-
-  const res = await fetch(`${PI_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "x-brand-api-key": PI_API_KEY,
-      "content-type": "application/json",
-      ...(options?.headers ?? {}),
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!res.ok) throw new Error(`Pi ${res.status}`);
-  return res.json();
-}
+import { normalizeLead } from "@/src/lib/brand-normalizers";
+import { piRequest } from "@/src/lib/pi";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -28,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const qs = status ? `?status=${encodeURIComponent(status)}` : "";
     const data = await piRequest(`/brand/leads${qs}`);
-    return NextResponse.json(data);
+    return NextResponse.json((Array.isArray(data) ? data : []).map(normalizeLead));
   } catch {
     return NextResponse.json([]);
   }
@@ -42,28 +23,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  if (!body.full_name || !body.email) {
+  if (!body.full_name || !body.role_type) {
     return NextResponse.json(
-      { error: "full_name and email are required" },
+      { error: "full_name and role_type are required" },
       { status: 400 }
     );
   }
 
+  const payload = {
+    campaignId: body.campaign_id ?? null,
+    fullName: body.full_name,
+    email: body.email ?? null,
+    phone: body.phone ?? null,
+    roleType: body.role_type,
+    specialty: body.specialty ?? null,
+    city: body.city ?? null,
+    source: body.source ?? "manual",
+    notes: body.notes ?? null,
+    status: body.status ?? "new",
+  };
+
   try {
     const data = await piRequest("/brand/leads", {
       method: "POST",
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(normalizeLead(data.lead ?? data), { status: 201 });
   } catch {
-    // Pi not connected — return optimistic response so UI stays functional
     return NextResponse.json(
-      {
+      normalizeLead({
         ...body,
         id: `local_${Date.now()}`,
-        status: body.status ?? "new",
         created_at: new Date().toISOString(),
-      },
+      }),
       { status: 201 }
     );
   }

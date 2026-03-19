@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildFallbackContent, buildOpenAIPrompt } from "@/src/lib/brand-prompts";
+import { normalizeGenerateResponse } from "@/src/lib/brand-normalizers";
+import { isPiConfigured, PI_BASE_URL, PI_API_KEY } from "@/src/lib/pi";
 import type { GenerateContentRequest, GenerateContentResponse } from "@/src/types/brand";
+
+const CONTENT_TYPE_MAP: Record<string, string> = {
+  post: "post",
+  reel_script: "reel",
+  ad_copy: "ad",
+  email_template: "email",
+  dm_template: "sms",
+  landing_page_copy: "post",
+};
+
+function buildPiPayload(body: GenerateContentRequest) {
+  return {
+    audience: body.audience.replace(/_/g, " ").replace(/\b\w/g, (s) => s.toUpperCase()),
+    city: body.location,
+    platform: body.platform.charAt(0).toUpperCase() + body.platform.slice(1).replace(/_/g, " "),
+    contentType: CONTENT_TYPE_MAP[body.content_type] || "post",
+    hook: body.theme || "Because You Deserve Better",
+    cta: body.cta,
+  };
+}
 
 export async function POST(req: NextRequest) {
   let body: GenerateContentRequest;
@@ -20,38 +42,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 1. Try Pi backend first
-  const PI_BASE_URL = process.env.PI_BASE_URL;
-  const PI_API_KEY = process.env.PI_API_KEY;
-
-  if (PI_BASE_URL && PI_API_KEY) {
+  if (isPiConfigured()) {
     try {
       const piRes = await fetch(`${PI_BASE_URL}/brand/content/generate`, {
         method: "POST",
         headers: {
-          "x-brand-api-key": PI_API_KEY,
+          "x-api-key": PI_API_KEY,
           "content-type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(buildPiPayload(body)),
         signal: AbortSignal.timeout(15000),
       });
 
       if (piRes.ok) {
         const data = await piRes.json();
-        return NextResponse.json({
-          ...data,
-          content_type,
-          platform,
-          audience,
-          location: location || "Dodge County, WI",
-        } satisfies GenerateContentResponse);
+        return NextResponse.json(
+          normalizeGenerateResponse(data.content ?? data.generated ?? data),
+        );
       }
     } catch {
       // Fall through to OpenAI or template fallback
     }
   }
 
-  // 2. Try OpenAI directly
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
   if (OPENAI_API_KEY) {
@@ -92,7 +105,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Template-based fallback — always works, no external deps
   const fallback = buildFallbackContent({
     content_type,
     platform,
