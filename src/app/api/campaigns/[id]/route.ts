@@ -1,40 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PI_BASE_URL = process.env.PI_BASE_URL;
-const PI_API_KEY = process.env.PI_API_KEY;
-
-async function piRequest(path: string, options?: RequestInit) {
-  if (!PI_BASE_URL || !PI_API_KEY) throw new Error("Pi not configured");
-
-  const res = await fetch(`${PI_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "x-brand-api-key": PI_API_KEY,
-      "content-type": "application/json",
-      ...(options?.headers ?? {}),
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!res.ok) throw new Error(`Pi ${res.status}`);
-  return res.json();
-}
+import { normalizeCampaign } from "@/src/lib/brand-normalizers";
+import { piRequest } from "@/src/lib/pi";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  let body: Record<string, unknown>;
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const payload = {
+    name: body.name,
+    objective: body.objective,
+    audience: body.target_roles,
+    locations: body.target_locations,
+    budget: body.budget,
+    status: body.status,
+    startDate: body.start_date,
+    endDate: body.end_date,
+  };
+
+  try {
     const data = await piRequest(`/brand/campaigns/${id}`, {
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
-    return NextResponse.json(data);
+    return NextResponse.json(normalizeCampaign(data.campaign ?? data));
   } catch {
-    const body = await req.json().catch(() => ({}));
-    return NextResponse.json({ id, ...body });
+    return NextResponse.json(normalizeCampaign({ id, ...body }));
   }
 }

@@ -5,9 +5,9 @@ export async function GET() {
   try {
     const data = await getTopServices();
     return NextResponse.json(data);
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json(
-      { ok: false, error: e?.message || "Request failed" },
+      { ok: false, error: e instanceof Error ? e.message : "Request failed" },
       { status: 500 }
     );
   }

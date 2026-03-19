@@ -196,13 +196,13 @@ export default async function DashboardPage() {
             Generate Content
           </Link>
           <Link
-            href="/leads/new"
+            href="/leads"
             className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
           >
             Add Lead
           </Link>
           <Link
-            href="/campaigns/new"
+            href="/campaigns"
             className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
           >
             New Campaign

@@ -32,7 +32,7 @@ export type LeadStatus =
   | "signed"
   | "lost";
 
-export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type ApprovalStatus = "draft" | "approved" | "scheduled" | "published" | "archived";
 
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 
@@ -77,7 +77,7 @@ export interface RecruitmentLead {
 export interface Campaign {
   id: string;
   name: string;
-  type: string;
+  type?: string;
   objective: string;
   target_roles: RoleType[];
   target_locations: string[];
@@ -110,6 +110,7 @@ export interface GenerateContentRequest {
 }
 
 export interface GenerateContentResponse {
+  id?: string;
   title: string;
   caption: string;
   script?: string;
@@ -119,4 +120,7 @@ export interface GenerateContentResponse {
   platform: Platform;
   audience: RoleType;
   location: string;
+  approval_status?: ApprovalStatus;
+  scheduled_for?: string;
+  created_at?: string;
 }

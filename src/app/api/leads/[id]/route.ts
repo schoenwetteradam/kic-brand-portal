@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PI_BASE_URL = process.env.PI_BASE_URL;
-const PI_API_KEY = process.env.PI_API_KEY;
-
-async function piRequest(path: string, options?: RequestInit) {
-  if (!PI_BASE_URL || !PI_API_KEY) throw new Error("Pi not configured");
-
-  const res = await fetch(`${PI_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "x-brand-api-key": PI_API_KEY,
-      "content-type": "application/json",
-      ...(options?.headers ?? {}),
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!res.ok) throw new Error(`Pi ${res.status}`);
-  return res.json();
-}
+import { normalizeLead } from "@/src/lib/brand-normalizers";
+import { piRequest } from "@/src/lib/pi";
 
 export async function GET(
   _req: NextRequest,
@@ -28,7 +9,7 @@ export async function GET(
   const { id } = await params;
   try {
     const data = await piRequest(`/brand/leads/${id}`);
-    return NextResponse.json(data);
+    return NextResponse.json(normalizeLead(data));
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -47,14 +28,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  const payload = {
+    status: body.status,
+    notes: body.notes,
+    nextFollowUpAt: body.next_follow_up_at,
+    lastContactedAt: body.last_contacted_at,
+  };
+
   try {
     const data = await piRequest(`/brand/leads/${id}`, {
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
-    return NextResponse.json(data);
+    return NextResponse.json(normalizeLead(data.lead ?? data));
   } catch {
-    // Optimistic: return merged update so UI stays responsive
-    return NextResponse.json({ id, ...body });
+    return NextResponse.json(normalizeLead({ id, ...body }));
   }
 }

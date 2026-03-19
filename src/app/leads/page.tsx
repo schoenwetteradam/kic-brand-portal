@@ -18,8 +18,7 @@ const PIPELINE_STAGES: { key: LeadStatus; label: string; color: string }[] = [
   { key: "interested", label: "Interested", color: "bg-amber-50 text-amber-700 ring-amber-200" },
   { key: "tour_scheduled", label: "Tour Scheduled", color: "bg-violet-50 text-violet-700 ring-violet-200" },
   { key: "interviewed", label: "Interviewed", color: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
-  { key: "pending_decision", label: "Pending", color: "bg-orange-50 text-orange-700 ring-orange-200" },
-  { key: "signed", label: "Signed", color: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+    { key: "signed", label: "Signed", color: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
   { key: "lost", label: "Lost", color: "bg-red-50 text-red-700 ring-red-200" },
 ];
 
@@ -28,8 +27,7 @@ const STATUS_NEXT: Partial<Record<LeadStatus, LeadStatus>> = {
   contacted: "interested",
   interested: "tour_scheduled",
   tour_scheduled: "interviewed",
-  interviewed: "pending_decision",
-  pending_decision: "signed",
+  interviewed: "signed",
 };
 
 const BLANK_FORM = {

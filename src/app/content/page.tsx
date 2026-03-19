@@ -1,16 +1,15 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import type {
+  ContentAsset,
   ContentType,
   GenerateContentRequest,
   GenerateContentResponse,
   Platform,
   RoleType,
 } from "@/src/types/brand";
-
-// ── Label maps ────────────────────────────────────────────────────────────────
 
 const CONTENT_TYPES: { value: ContentType; label: string }[] = [
   { value: "post", label: "Social Post" },
@@ -63,8 +62,6 @@ const DEFAULT_LOCATIONS = [
   "Dodge County, WI",
 ];
 
-// ── Default form state ────────────────────────────────────────────────────────
-
 const DEFAULT_FORM: GenerateContentRequest = {
   content_type: "post",
   platform: "instagram",
@@ -76,13 +73,14 @@ const DEFAULT_FORM: GenerateContentRequest = {
   offer: "",
 };
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-
 type Tab = "generate" | "drafts" | "approved" | "scheduled";
 
 function ContentStudioInner() {
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as Tab) ?? "generate";
+  const requestedTab = searchParams.get("tab");
+  const initialTab = (requestedTab === "drafts" || requestedTab === "approved" || requestedTab === "scheduled"
+    ? requestedTab
+    : "generate") as Tab;
 
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [form, setForm] = useState<GenerateContentRequest>(DEFAULT_FORM);
@@ -119,6 +117,8 @@ function ContentStudioInner() {
 
       const data: GenerateContentResponse = await res.json();
       setResult(data);
+      setSavedMsg(data.id ? "Draft saved to Pi backend" : "Generated locally");
+      setTimeout(() => setSavedMsg(""), 3000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -132,9 +132,20 @@ function ContentStudioInner() {
       const res = await fetch("/api/content", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...result, approval_status: "pending" }),
+        body: JSON.stringify({ ...result, approval_status: "draft" }),
       });
       if (!res.ok) throw new Error("Save failed");
+      const saved: ContentAsset = await res.json();
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              id: saved.id,
+              approval_status: saved.approval_status,
+              created_at: saved.created_at,
+            }
+          : prev
+      );
       setSavedMsg("Saved to drafts");
       setTimeout(() => setSavedMsg(""), 3000);
     } catch {
@@ -153,7 +164,7 @@ function ContentStudioInner() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const TABS: { key: Tab; label: string }[] = [
+  const tabs: { key: Tab; label: string }[] = [
     { key: "generate", label: "Generate" },
     { key: "drafts", label: "Drafts" },
     { key: "approved", label: "Approved" },
@@ -162,7 +173,6 @@ function ContentStudioInner() {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10">
-      {/* Header */}
       <div className="mb-6">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-400">
           Content Studio
@@ -171,15 +181,15 @@ function ContentStudioInner() {
           Generate Recruiting Content
         </h1>
         <p className="mt-1 text-slate-500">
-          Create posts, scripts, ad copy, and more for booth-renter recruiting.
+          Create posts, scripts, ad copy, then approve or schedule them from the same screen.
         </p>
       </div>
 
-      {/* Tabs */}
       <div className="mb-8 flex gap-1 border-b border-slate-200">
-        {TABS.map(({ key, label }) => (
+        {tabs.map(({ key, label }) => (
           <button
             key={key}
+            data-tab={key}
             onClick={() => setActiveTab(key)}
             className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${
               activeTab === key
@@ -192,71 +202,31 @@ function ContentStudioInner() {
         ))}
       </div>
 
-      {/* Generate tab */}
       {activeTab === "generate" && (
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* Form */}
           <form onSubmit={handleGenerate} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                  Content Type
-                </label>
-                <select
-                  value={form.content_type}
-                  onChange={(e) =>
-                    setField("content_type", e.target.value as ContentType)
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-                >
-                  {CONTENT_TYPES.map(({ value, label }) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectField
+                label="Content Type"
+                value={form.content_type}
+                onChange={(value) => setField("content_type", value as ContentType)}
+                options={CONTENT_TYPES}
+              />
+              <SelectField
+                label="Platform"
+                value={form.platform}
+                onChange={(value) => setField("platform", value as Platform)}
+                options={PLATFORMS}
+              />
+              <SelectField
+                label="Target Audience"
+                value={form.audience}
+                onChange={(value) => setField("audience", value as RoleType)}
+                options={AUDIENCES}
+              />
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                  Platform
-                </label>
-                <select
-                  value={form.platform}
-                  onChange={(e) =>
-                    setField("platform", e.target.value as Platform)
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-                >
-                  {PLATFORMS.map(({ value, label }) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                  Target Audience
-                </label>
-                <select
-                  value={form.audience}
-                  onChange={(e) =>
-                    setField("audience", e.target.value as RoleType)
-                  }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-                >
-                  {AUDIENCES.map(({ value, label }) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Location
                 </label>
                 <input
@@ -268,73 +238,43 @@ function ContentStudioInner() {
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
                 />
                 <datalist id="location-options">
-                  {DEFAULT_LOCATIONS.map((l) => (
-                    <option key={l} value={l} />
+                  {DEFAULT_LOCATIONS.map((location) => (
+                    <option key={location} value={location} />
                   ))}
                 </datalist>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                  Campaign Theme
-                </label>
-                <select
-                  value={form.theme}
-                  onChange={(e) => setField("theme", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-                >
-                  {THEMES.map((t) => (
-                    <option key={t} value={t}>
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                  Tone
-                </label>
-                <select
-                  value={form.tone}
-                  onChange={(e) => setField("tone", e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-                >
-                  {TONES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                Call to Action
-              </label>
-              <input
-                type="text"
-                value={form.cta}
-                onChange={(e) => setField("cta", e.target.value)}
-                placeholder="e.g. DM us 'BOOTH' or apply through the link in bio"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+              <SelectField
+                label="Campaign Theme"
+                value={form.theme}
+                onChange={(value) => setField("theme", value)}
+                options={THEMES.map((value) => ({
+                  value,
+                  label: value.charAt(0).toUpperCase() + value.slice(1),
+                }))}
+              />
+              <SelectField
+                label="Tone"
+                value={form.tone}
+                onChange={(value) => setField("tone", value)}
+                options={TONES.map((value) => ({ value, label: value }))}
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                Special Offer{" "}
-                <span className="font-normal text-slate-400">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={form.offer}
-                onChange={(e) => setField("offer", e.target.value)}
-                placeholder="e.g. First month 10% off for new renters"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-              />
-            </div>
+            <TextField
+              label="Call to Action"
+              value={form.cta}
+              onChange={(value) => setField("cta", value)}
+              placeholder="e.g. DM us 'BOOTH' or apply through the link in bio"
+            />
+
+            <TextField
+              label="Special Offer"
+              value={form.offer || ""}
+              onChange={(value) => setField("offer", value)}
+              placeholder="e.g. First month 10% off for new renters"
+              optional
+            />
 
             <button
               type="submit"
@@ -351,31 +291,31 @@ function ContentStudioInner() {
             )}
           </form>
 
-          {/* Result */}
           <div>
             {result ? (
               <div className="rounded-3xl border border-slate-200 bg-white p-6">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                      {result.content_type.replace(/_/g, " ")} ·{" "}
-                      {result.platform}
+                      {result.content_type.replace(/_/g, " ")} · {result.platform}
                     </p>
                     <h3 className="mt-1 font-semibold">{result.title}</h3>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex shrink-0 gap-2">
                     <button
                       onClick={handleCopy}
                       className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                     >
                       {copied ? "Copied!" : "Copy"}
                     </button>
-                    <button
-                      onClick={handleSaveDraft}
-                      className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
-                    >
-                      Save Draft
-                    </button>
+                    {!result.id && (
+                      <button
+                        onClick={handleSaveDraft}
+                        className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
+                      >
+                        Save Draft
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -385,50 +325,7 @@ function ContentStudioInner() {
                   </p>
                 )}
 
-                {result.script ? (
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Script
-                    </p>
-                    <pre className="whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
-                      {result.script}
-                    </pre>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Caption
-                    </p>
-                    <pre className="whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
-                      {result.caption}
-                    </pre>
-                  </div>
-                )}
-
-                {result.hashtags.length > 0 && (
-                  <div className="mt-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Hashtags
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.hashtags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    CTA
-                  </p>
-                  <p className="mt-0.5 text-sm text-slate-700">{result.cta}</p>
-                </div>
+                <ContentPreview result={result} />
               </div>
             ) : (
               <div className="flex h-full min-h-[400px] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50">
@@ -441,21 +338,130 @@ function ContentStudioInner() {
         </div>
       )}
 
-      {/* Drafts / Approved / Scheduled tabs */}
-      {(activeTab === "drafts" ||
-        activeTab === "approved" ||
-        activeTab === "scheduled") && (
-        <ContentList status={activeTab} />
+      {(activeTab === "drafts" || activeTab === "approved" || activeTab === "scheduled") && (
+        <ContentList status={activeTab} onSwitchTab={setActiveTab} />
       )}
     </div>
   );
 }
 
-function ContentList({ status }: { status: string }) {
-  const [items, setItems] = useState<GenerateContentResponse[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  optional = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  optional?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label} {optional && <span className="font-normal text-slate-400">(optional)</span>}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+      />
+    </div>
+  );
+}
+
+function ContentPreview({ result }: { result: GenerateContentResponse }) {
+  return (
+    <>
+      {result.script ? (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Script</p>
+          <pre className="whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+            {result.script}
+          </pre>
+        </div>
+      ) : (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Caption</p>
+          <pre className="whitespace-pre-wrap rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+            {result.caption}
+          </pre>
+        </div>
+      )}
+
+      {result.hashtags.length > 0 && (
+        <div className="mt-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Hashtags</p>
+          <div className="flex flex-wrap gap-1.5">
+            {result.hashtags.map((tag) => (
+              <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">CTA</p>
+        <p className="mt-0.5 text-sm text-slate-700">{result.cta}</p>
+      </div>
+    </>
+  );
+}
+
+function ContentList({
+  status,
+  onSwitchTab,
+}: {
+  status: Exclude<Tab, "generate">;
+  onSwitchTab: (tab: Tab) => void;
+}) {
+  const [items, setItems] = useState<ContentAsset[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [savingId, setSavingId] = useState("");
+  const [scheduleById, setScheduleById] = useState<Record<string, string>>({});
+
+  const statusLabel = useMemo(
+    () => ({ drafts: "Draft", approved: "Approved", scheduled: "Scheduled" }),
+    []
+  );
 
   async function load() {
     setLoading(true);
@@ -469,55 +475,73 @@ function ContentList({ status }: { status: string }) {
       setError("Could not load content. Check your Pi connection.");
     } finally {
       setLoading(false);
-      setLoaded(true);
     }
   }
 
-  if (!loaded && !loading) {
-    load();
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  async function approveItem(id: string) {
+    setSavingId(id);
+    try {
+      const res = await fetch(`/api/content/${id}/approve`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      setError("Could not approve content.");
+    } finally {
+      setSavingId("");
+    }
   }
 
-  const statusLabel: Record<string, string> = {
-    drafts: "Pending Approval",
-    approved: "Approved",
-    scheduled: "Scheduled",
-  };
+  async function scheduleItem(id: string) {
+    const scheduled_for = scheduleById[id];
+    if (!scheduled_for) {
+      setError("Choose a schedule date and time first.");
+      return;
+    }
+
+    setSavingId(id);
+    try {
+      const res = await fetch(`/api/content/${id}/schedule`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scheduled_for: new Date(scheduled_for).toISOString() }),
+      });
+      if (!res.ok) throw new Error();
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      setError("Could not schedule content.");
+    } finally {
+      setSavingId("");
+    }
+  }
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-slate-500">
-          {statusLabel[status] ?? status} content
-        </p>
-        <button
-          onClick={load}
-          className="text-xs text-slate-500 hover:text-slate-800"
-        >
+        <p className="text-sm text-slate-500">{statusLabel[status]} content</p>
+        <button onClick={load} className="text-xs text-slate-500 hover:text-slate-800">
           Refresh
         </button>
       </div>
 
-      {loading && (
-        <p className="text-sm text-slate-400">Loading...</p>
-      )}
+      {loading && <p className="text-sm text-slate-400">Loading...</p>}
 
       {error && (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <p className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           {error}
         </p>
       )}
 
-      {!loading && loaded && items.length === 0 && (
+      {!loading && items.length === 0 && (
         <div className="flex min-h-[300px] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50">
           <div className="text-center">
             <p className="text-sm text-slate-400">No {status} content yet.</p>
             <button
-              onClick={() => {
-                const tab = document.querySelector(
-                  '[data-tab="generate"]'
-                ) as HTMLButtonElement;
-                tab?.click();
-              }}
+              onClick={() => onSwitchTab("generate")}
               className="mt-3 text-xs font-medium text-slate-600 underline underline-offset-2"
             >
               Generate some content
@@ -527,18 +551,98 @@ function ContentList({ status }: { status: string }) {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className="rounded-3xl border border-slate-200 bg-white p-5"
-          >
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-              {item.content_type?.replace(/_/g, " ")} · {item.platform}
-            </p>
-            <h3 className="mt-1 font-semibold text-sm">{item.title}</h3>
-            <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-500">
+        {items.map((item) => (
+          <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  {item.content_type.replace(/_/g, " ")} · {item.platform}
+                </p>
+                <h3 className="mt-1 text-sm font-semibold">{item.title}</h3>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-600">
+                {item.approval_status}
+              </span>
+            </div>
+
+            <p className="mt-2 line-clamp-4 text-xs leading-relaxed text-slate-500">
               {item.caption || item.script}
             </p>
+
+            {item.hashtags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {item.hashtags.slice(0, 4).map((tag) => (
+                  <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {status === "drafts" && (
+              <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    Schedule for
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleById[item.id] || ""}
+                    onChange={(e) =>
+                      setScheduleById((prev) => ({ ...prev, [item.id]: e.target.value }))
+                    }
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => approveItem(item.id)}
+                    disabled={savingId === item.id}
+                    className="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => scheduleItem(item.id)}
+                    disabled={savingId === item.id}
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Schedule
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {status === "approved" && (
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Schedule approved content
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="datetime-local"
+                    value={scheduleById[item.id] || ""}
+                    onChange={(e) =>
+                      setScheduleById((prev) => ({ ...prev, [item.id]: e.target.value }))
+                    }
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => scheduleItem(item.id)}
+                    disabled={savingId === item.id}
+                    className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    Schedule
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {status === "scheduled" && item.scheduled_for && (
+              <p className="mt-4 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Scheduled for {new Date(item.scheduled_for).toLocaleString()}
+              </p>
+            )}
           </div>
         ))}
       </div>
