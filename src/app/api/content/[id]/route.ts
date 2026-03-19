@@ -5,7 +5,6 @@ const PI_API_KEY = process.env.PI_API_KEY;
 
 async function piRequest(path: string, options?: RequestInit) {
   if (!PI_BASE_URL || !PI_API_KEY) throw new Error("Pi not configured");
-
   const res = await fetch(`${PI_BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -16,7 +15,6 @@ async function piRequest(path: string, options?: RequestInit) {
     cache: "no-store",
     signal: AbortSignal.timeout(10000),
   });
-
   if (!res.ok) throw new Error(`Pi ${res.status}`);
   return res.json();
 }
@@ -27,7 +25,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const data = await piRequest(`/brand/campaigns/${id}`);
+    const data = await piRequest(`/brand/content/${id}`);
     return NextResponse.json(data);
   } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -46,7 +44,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
   try {
-    const data = await piRequest(`/brand/campaigns/${id}`, {
+    const data = await piRequest(`/brand/content/${id}`, {
       method: "PATCH",
       body: JSON.stringify(body),
     });

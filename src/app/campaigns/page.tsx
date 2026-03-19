@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Campaign, CampaignStatus, RoleType } from "@/src/types/brand";
 
@@ -362,7 +363,7 @@ export default function CampaignsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold truncate">{c.name}</h3>
+                    <Link href={`/campaigns/${c.id}`} className="font-semibold truncate hover:underline">{c.name}</Link>
                     <span
                       className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${
                         STATUS_COLORS[c.status]

@@ -527,20 +527,25 @@ function ContentList({ status }: { status: string }) {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className="rounded-3xl border border-slate-200 bg-white p-5"
-          >
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-              {item.content_type?.replace(/_/g, " ")} · {item.platform}
-            </p>
-            <h3 className="mt-1 font-semibold text-sm">{item.title}</h3>
-            <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-500">
-              {item.caption || item.script}
-            </p>
-          </div>
-        ))}
+        {items.map((item, i) => {
+          const id = (item as unknown as Record<string, unknown>).id as string | undefined;
+          const Wrapper = id ? 'a' : 'div';
+          return (
+            <Wrapper
+              key={id ?? i}
+              {...(id ? { href: `/content/${id}` } : {})}
+              className="rounded-3xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition"
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                {item.content_type?.replace(/_/g, " ")} · {item.platform}
+              </p>
+              <h3 className="mt-1 font-semibold text-sm">{item.title}</h3>
+              <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-slate-500">
+                {item.caption || item.script}
+              </p>
+            </Wrapper>
+          );
+        })}
       </div>
     </div>
   );

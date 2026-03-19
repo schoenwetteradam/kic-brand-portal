@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 import { buildFallbackContent, buildOpenAIPrompt } from "@/src/lib/brand-prompts";
 import type { GenerateContentRequest, GenerateContentResponse } from "@/src/types/brand";
 
@@ -51,7 +52,41 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 2. Try OpenAI directly
+  // 2. Try Claude (Anthropic) — primary AI engine
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+  if (ANTHROPIC_API_KEY) {
+    try {
+      const prompt = buildOpenAIPrompt(body); // prompt works for both
+      const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const text =
+        message.content[0].type === "text" ? message.content[0].text : "";
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const raw = JSON.parse(jsonMatch[0]);
+        return NextResponse.json({
+          title: raw.title ?? "",
+          caption: raw.caption ?? "",
+          script: raw.script ?? "",
+          hashtags: raw.hashtags ?? [],
+          cta: raw.cta ?? cta,
+          content_type,
+          platform,
+          audience,
+          location: location || "Dodge County, WI",
+        } satisfies GenerateContentResponse);
+      }
+    } catch {
+      // Fall through to OpenAI or template fallback
+    }
+  }
+
+  // 3. Try OpenAI as secondary AI engine
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
   if (OPENAI_API_KEY) {
@@ -92,7 +127,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Template-based fallback — always works, no external deps
+  // 4. Template-based fallback — always works, no external deps
   const fallback = buildFallbackContent({
     content_type,
     platform,

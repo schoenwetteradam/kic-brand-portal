@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildFallbackContent } from "@/src/lib/brand-prompts";
+import Anthropic from "@anthropic-ai/sdk";
+import { buildFallbackContent, buildOpenAIPrompt } from "@/src/lib/brand-prompts";
 import type { ContentType, Platform, RoleType } from "@/src/types/brand";
 
 const WEEKLY_BRIEF: Array<{
@@ -57,6 +58,28 @@ export async function GET(req: NextRequest) {
         }
       } catch {
         // Fall through
+      }
+    }
+
+    // Try Claude for AI-generated content
+    if (!content && process.env.ANTHROPIC_API_KEY) {
+      try {
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const prompt = buildOpenAIPrompt(req_body);
+        const message = await client.messages.create({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1024,
+          messages: [{ role: "user", content: prompt }],
+        });
+        const text =
+          message.content[0].type === "text" ? message.content[0].text : "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const raw = JSON.parse(jsonMatch[0]);
+          content = { ...raw, ...brief, location: "Dodge County, WI" };
+        }
+      } catch {
+        // Fall through to template
       }
     }
 
