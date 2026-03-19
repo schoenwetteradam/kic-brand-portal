@@ -372,6 +372,7 @@ export default function LeadsPage() {
             return (
               <div
                 key={lead.id}
+                onClick={() => setSelectedLead(lead)}
                 className="rounded-3xl border border-slate-200 bg-white p-5 transition hover:border-slate-300"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -407,7 +408,11 @@ export default function LeadsPage() {
                   <div className="shrink-0 flex flex-col gap-2 items-end">
                     {nextStage && (
                       <button
-                        onClick={() => advanceLead(lead)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void advanceLead(lead);
+                        }}
                         className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 whitespace-nowrap"
                       >
                         → {PIPELINE_STAGES.find((s) => s.key === nextStage)?.label}
@@ -415,7 +420,11 @@ export default function LeadsPage() {
                     )}
                     {lead.status !== "lost" && lead.status !== "signed" && (
                       <button
-                        onClick={() => updateLeadStatus(lead.id, "lost")}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void updateLeadStatus(lead.id, "lost");
+                        }}
                         className="text-xs text-slate-400 hover:text-red-600"
                       >
                         Mark lost

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         const res = await fetch(`${PI_BASE_URL}/brand/content/generate`, {
           method: "POST",
           headers: {
-            "x-brand-api-key": PI_API_KEY,
+            "x-api-key": PI_API_KEY,
             "content-type": "application/json",
           },
           body: JSON.stringify(req_body),
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         await fetch(`${PI_BASE_URL}/brand/content`, {
           method: "POST",
           headers: {
-            "x-brand-api-key": PI_API_KEY,
+            "x-api-key": PI_API_KEY,
             "content-type": "application/json",
           },
           body: JSON.stringify({ ...content, approval_status: "pending" }),

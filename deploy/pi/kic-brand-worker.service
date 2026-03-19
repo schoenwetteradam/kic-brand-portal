@@ -1,0 +1,10 @@
+[Unit]
+Description=KIC Brand Portal Autonomy Worker
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/kic-brand-portal
+EnvironmentFile=/opt/kic-brand-portal/.env
+ExecStart=/usr/bin/node /opt/kic-brand-portal/server/brand/worker_brand_autonomy.js
+User=pi

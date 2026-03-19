@@ -9,6 +9,13 @@ const PORTAL_SECTIONS = [
     badge: null,
   },
   {
+    href: "/agent",
+    label: "Agent Console",
+    description:
+      "Let salon managers and admins direct the recruiting agent, plan content, and shape weekly growth actions.",
+    badge: "NEW",
+  },
+  {
     href: "/content",
     label: "Content Studio",
     description:
