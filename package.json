@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "brand:api": "node app/server/server.js",
-    "brand:daily": "node app/server/worker_brand_daily.js"
+    "brand:api": "node server/brand/server.js",
+    "brand:daily": "node server/brand/worker_brand_daily.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",
