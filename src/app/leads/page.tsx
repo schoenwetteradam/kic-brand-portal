@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { LeadStatus, RecruitmentLead, RoleType } from "@/src/types/brand";
+import type { LeadStatus, RecruitmentLead, RoleType } from "@/types/brand";
 
 const ROLE_LABELS: Record<RoleType, string> = {
   cosmetologist: "Cosmetologist",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Campaign, CampaignStatus, RoleType } from "@/src/types/brand";
+import type { Campaign, CampaignStatus, RoleType } from "@/types/brand";
 
 const ROLE_OPTIONS: { value: RoleType; label: string }[] = [
   { value: "cosmetologist", label: "Cosmetologists" },

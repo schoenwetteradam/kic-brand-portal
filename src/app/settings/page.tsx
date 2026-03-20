@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { DEFAULT_APP_SETTINGS, type AppSettings } from "@/src/lib/app-settings";
+import { DEFAULT_APP_SETTINGS, type AppSettings } from "@/lib/app-settings";
 
 type Section = "integrations" | "automation" | "brand";
 

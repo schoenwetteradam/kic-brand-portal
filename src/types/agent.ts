@@ -1,4 +1,4 @@
-import type { RoleType } from "@/src/types/brand";
+import type { RoleType } from "@/types/brand";
 
 export type AgentMode = "strategy" | "research" | "content" | "schedule";
 

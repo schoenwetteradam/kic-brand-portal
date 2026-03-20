@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeContent } from "@/src/lib/brand-normalizers";
-import { piRequest } from "@/src/lib/pi";
+import { normalizeContent } from "@/lib/brand-normalizers";
+import { piRequest } from "@/lib/pi";
 
 export async function POST(
   req: NextRequest,

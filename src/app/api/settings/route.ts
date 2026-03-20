@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DEFAULT_APP_SETTINGS, mergeSettings, type AppSettings } from "@/src/lib/app-settings";
-import { getSupabaseAdmin } from "@/src/lib/supabase-admin";
+import { DEFAULT_APP_SETTINGS, mergeSettings, type AppSettings } from "@/lib/app-settings";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const APP_ID = "kic-brand-portal";
 

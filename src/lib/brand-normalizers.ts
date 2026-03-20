@@ -5,7 +5,7 @@ import type {
   Platform,
   RecruitmentLead,
   RoleType,
-} from "@/src/types/brand";
+} from "@/types/brand";
 
 type LooseRecord = Record<string, unknown>;
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildFallbackContent } from "@/src/lib/brand-prompts";
-import type { ContentType, Platform, RoleType } from "@/src/types/brand";
+import { buildFallbackContent } from "@/lib/brand-prompts";
+import type { ContentType, Platform, RoleType } from "@/types/brand";
 
 const WEEKLY_BRIEF: Array<{
   content_type: ContentType;

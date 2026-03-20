@@ -1,4 +1,4 @@
-import type { GenerateContentRequest } from "@/src/types/brand";
+import type { GenerateContentRequest } from "@/types/brand";
 
 export const ROLE_LABELS: Record<string, string> = {
   cosmetologist: "cosmetologists",

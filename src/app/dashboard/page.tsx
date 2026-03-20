@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { getLowStock, getMetrics, getTopServices } from "@/src/lib/pi-client";
-import type { BrandMetrics } from "@/src/types/brand";
+import { getLowStock, getMetrics, getTopServices } from "@/lib/pi-client";
+import type { BrandMetrics } from "@/types/brand";
 
 async function getBrandMetrics(): Promise<BrandMetrics> {
   try {
     const { getBrandMetrics: fetchBrandMetrics } = await import(
-      "@/src/lib/pi-client"
+      "@/lib/pi-client"
     );
     return await fetchBrandMetrics();
   } catch {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { RoleType } from "@/src/types/brand";
-import type { AgentMode, AgentTaskRecord } from "@/src/types/agent";
+import type { RoleType } from "@/types/brand";
+import type { AgentMode, AgentTaskRecord } from "@/types/agent";
 
 const MODE_OPTIONS: Array<{ value: AgentMode; label: string; description: string }> = [
   {

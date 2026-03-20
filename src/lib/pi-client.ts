@@ -5,7 +5,7 @@ import type {
   GenerateContentRequest,
   GenerateContentResponse,
   RecruitmentLead,
-} from "@/src/types/brand";
+} from "@/types/brand";
 
 const PI_BASE_URL = process.env.PI_BASE_URL || process.env.PI_API_BASE_URL;
 const PI_API_KEY = process.env.PI_API_KEY;

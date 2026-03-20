@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildFallbackContent, buildOpenAIPrompt } from "@/src/lib/brand-prompts";
-import { normalizeGenerateResponse } from "@/src/lib/brand-normalizers";
-import { isPiConfigured, PI_BASE_URL, PI_API_KEY } from "@/src/lib/pi";
-import type { GenerateContentRequest, GenerateContentResponse } from "@/src/types/brand";
+import { buildFallbackContent, buildOpenAIPrompt } from "@/lib/brand-prompts";
+import { normalizeGenerateResponse } from "@/lib/brand-normalizers";
+import { isPiConfigured, PI_BASE_URL, PI_API_KEY } from "@/lib/pi";
+import type { GenerateContentRequest, GenerateContentResponse } from "@/types/brand";
 
 const CONTENT_TYPE_MAP: Record<string, string> = {
   post: "post",

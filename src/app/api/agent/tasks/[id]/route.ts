@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PI_BASE_URL, PI_API_KEY, isPiConfigured } from "@/src/lib/pi";
+import { PI_BASE_URL, PI_API_KEY, isPiConfigured } from "@/lib/pi";
 
 export async function PATCH(
   req: NextRequest,

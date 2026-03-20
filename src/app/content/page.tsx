@@ -9,7 +9,7 @@ import type {
   GenerateContentResponse,
   Platform,
   RoleType,
-} from "@/src/types/brand";
+} from "@/types/brand";
 
 const CONTENT_TYPES: { value: ContentType; label: string }[] = [
   { value: "post", label: "Social Post" },

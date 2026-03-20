@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { RoleType } from "@/src/types/brand";
-import type { AgentCommandRequest, AgentCommandResponse, AgentMode, AgentTaskRecord } from "@/src/types/agent";
-import { PI_BASE_URL, PI_API_KEY, isPiConfigured } from "@/src/lib/pi";
+import type { RoleType } from "@/types/brand";
+import type { AgentCommandRequest, AgentCommandResponse, AgentMode, AgentTaskRecord } from "@/types/agent";
+import { PI_BASE_URL, PI_API_KEY, isPiConfigured } from "@/lib/pi";
 
 type CampaignBrief = {
   title: string;

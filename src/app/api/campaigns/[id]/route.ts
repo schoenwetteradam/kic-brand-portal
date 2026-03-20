@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeCampaign } from "@/src/lib/brand-normalizers";
-import { piRequest } from "@/src/lib/pi";
+import { normalizeCampaign } from "@/lib/brand-normalizers";
+import { piRequest } from "@/lib/pi";
 
 export async function PATCH(
   req: NextRequest,
