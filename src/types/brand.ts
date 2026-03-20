@@ -89,6 +89,13 @@ export interface Campaign {
   created_at: string;
 }
 
+export interface PipelineStageCounts {
+  new: number;
+  contacted: number;
+  tour_scheduled: number;
+  signed: number;
+}
+
 export interface BrandMetrics {
   new_leads_7d: number;
   tours_booked: number;
@@ -96,6 +103,7 @@ export interface BrandMetrics {
   active_campaigns: number;
   pending_approvals: number;
   scheduled_posts: number;
+  pipeline_stage_counts?: PipelineStageCounts;
 }
 
 export interface GenerateContentRequest {

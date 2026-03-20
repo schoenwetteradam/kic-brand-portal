@@ -95,10 +95,26 @@ router.get("/recruiting-metrics", async (_req, res) => {
         (select count(*)::int from recruitment_leads where status = 'signed') as signed_renters,
         (select count(*)::int from brand_campaigns where status = 'active') as active_campaigns,
         (select count(*)::int from content_assets where status = 'draft') as pending_approvals,
-        (select count(*)::int from content_assets where status = 'scheduled') as scheduled_posts
+        (select count(*)::int from content_assets where status = 'scheduled') as scheduled_posts,
+        (select count(*)::int from recruitment_leads where status = 'new') as pipeline_new,
+        (select count(*)::int from recruitment_leads where status = 'contacted') as pipeline_contacted
     `);
 
-    res.json(dashboard.rows[0]);
+    const row = dashboard.rows[0] || {};
+    res.json({
+      new_leads_7d: Number(row.new_leads_7d) || 0,
+      tours_booked: Number(row.tours_booked) || 0,
+      signed_renters: Number(row.signed_renters) || 0,
+      active_campaigns: Number(row.active_campaigns) || 0,
+      pending_approvals: Number(row.pending_approvals) || 0,
+      scheduled_posts: Number(row.scheduled_posts) || 0,
+      pipeline_stage_counts: {
+        new: Number(row.pipeline_new) || 0,
+        contacted: Number(row.pipeline_contacted) || 0,
+        tour_scheduled: Number(row.tours_booked) || 0,
+        signed: Number(row.signed_renters) || 0,
+      },
+    });
   } catch (err) {
     console.error("GET /brand/recruiting-metrics error:", err);
     res.status(500).json({ ok: false, error: "Failed to load recruiting metrics" });

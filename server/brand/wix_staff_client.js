@@ -47,14 +47,22 @@ function mapTopServices(s) {
   const o = s && typeof s === "object" ? s : {};
   const list =
     o.top_services ?? o.topServices ?? o.services ?? (Array.isArray(o) ? o : []);
-  return Array.isArray(list) ? list : [];
+  const arr = Array.isArray(list) ? list : [];
+  return arr.map((item) => ({
+    service_name: item.service_name ?? item.name ?? item.service ?? String(item),
+    bookings_30d: num(item.bookings_30d ?? item.bookings ?? item.count ?? item.bookings30d),
+  }));
 }
 
 function mapLowStock(s) {
   const o = s && typeof s === "object" ? s : {};
   const list =
     o.low_stock ?? o.lowStock ?? o.low_stock_products ?? o.lowStockProducts ?? [];
-  return Array.isArray(list) ? list : [];
+  const arr = Array.isArray(list) ? list : [];
+  return arr.map((item) => ({
+    product_name: item.product_name ?? item.name ?? item.product ?? String(item),
+    qty_on_hand: num(item.qty_on_hand ?? item.quantity ?? item.qty ?? item.stock),
+  }));
 }
 
 module.exports = {

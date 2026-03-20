@@ -17,11 +17,12 @@ async function getBrandMetrics(): Promise<BrandMetrics> {
       active_campaigns: 0,
       pending_approvals: 0,
       scheduled_posts: 0,
+      pipeline_stage_counts: { new: 0, contacted: 0, tour_scheduled: 0, signed: 0 },
     };
   }
 }
 
-const LEAD_PIPELINE_STAGES = [
+const LEAD_PIPELINE_STAGES: Array<{ key: keyof { new: number; contacted: number; tour_scheduled: number; signed: number }; label: string; color: string }> = [
   { key: "new", label: "New Leads", color: "bg-blue-50 text-blue-700 ring-blue-200" },
   { key: "contacted", label: "Contacted", color: "bg-amber-50 text-amber-700 ring-amber-200" },
   { key: "tour_scheduled", label: "Tours Booked", color: "bg-violet-50 text-violet-700 ring-violet-200" },
@@ -169,15 +170,17 @@ export default async function DashboardPage() {
           </Link>
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
-          {LEAD_PIPELINE_STAGES.map(({ label, color }) => (
+          {LEAD_PIPELINE_STAGES.map(({ key, label, color }) => (
             <div
-              key={label}
+              key={key}
               className={`rounded-2xl p-4 ring-1 ${color}`}
             >
               <div className="text-xs font-semibold uppercase tracking-wide opacity-70">
                 {label}
               </div>
-              <div className="mt-1 text-2xl font-semibold">—</div>
+              <div className="mt-1 text-2xl font-semibold">
+                {brandMetrics.pipeline_stage_counts?.[key] ?? "—"}
+              </div>
             </div>
           ))}
         </div>
@@ -217,8 +220,14 @@ export default async function DashboardPage() {
         </h2>
 
         {salonError && (
-          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {salonError}
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-medium">Salon data not connected</p>
+            <p className="mt-1 text-amber-800">{salonError}</p>
+            <p className="mt-2 text-xs text-amber-700">
+              On the Pi: set <code className="rounded bg-amber-100 px-1">WIX_STAFF_API_BASE_URL</code> and{" "}
+              <code className="rounded bg-amber-100 px-1">WIX_STAFF_API_TOKEN</code>, or add{" "}
+              <code className="rounded bg-amber-100 px-1">GET /internal/ops/summary</code> to your Wix staff backend.
+            </p>
           </div>
         )}
 
