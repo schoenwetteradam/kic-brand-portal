@@ -7,7 +7,8 @@ async function piFetch(path: string) {
 
   const res = await fetch(`${PI_BASE_URL}${path}`, {
     headers: {
-      "x-brand-api-key": PI_API_KEY,
+      // Must match server/brand/middleware_api_key.js (x-api-key + INTERNAL_API_KEY | PI_API_KEY)
+      "x-api-key": PI_API_KEY,
       "content-type": "application/json",
     },
     cache: "no-store",
