@@ -16,6 +16,14 @@ export default async function DashboardPage() {
     error = e?.message || "Failed to load dashboard data";
   }
 
+  const hasLiveData =
+    !error &&
+    ((metrics.bookings_7d ?? 0) > 0 ||
+      (metrics.revenue_7d ?? 0) > 0 ||
+      (metrics.new_customers_7d ?? 0) > 0 ||
+      topServices.length > 0 ||
+      lowStock.length > 0);
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-6 py-10">
@@ -32,8 +40,28 @@ export default async function DashboardPage() {
         </div>
 
         {error ? (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
-            {error}
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+            <p className="font-medium">Salon data isn&apos;t connected yet</p>
+            <p className="mt-2 text-sm text-amber-900/90">
+              The dashboard will fill in once your Pi brand API can reach the Wix staff backend
+              (<code className="rounded bg-amber-100/80 px-1 py-0.5 text-xs">/internal/ops/summary</code>)
+              and your Pi environment has the right tokens. Until then you can keep working in the portal
+              — this isn&apos;t a crash.
+            </p>
+            <details className="mt-3 text-xs text-amber-900/80">
+              <summary className="cursor-pointer select-none text-amber-900">Technical detail</summary>
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-amber-100/50 p-2">
+                {error}
+              </pre>
+            </details>
+          </div>
+        ) : !hasLiveData ? (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 text-slate-700 shadow-sm ring-1 ring-slate-200">
+            <p className="font-medium text-slate-800">No metrics yet</p>
+            <p className="mt-2 text-sm text-slate-600">
+              Connected, but bookings, services, and inventory are all empty for the current window.
+              If you expected numbers, confirm your Pi summaries and date ranges on the salon backend.
+            </p>
           </div>
         ) : null}
 
