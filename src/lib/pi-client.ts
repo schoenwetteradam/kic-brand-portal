@@ -7,16 +7,17 @@ import type {
   RecruitmentLead,
 } from "@/src/types/brand";
 
-const PI_BASE_URL = process.env.PI_API_BASE_URL || process.env.PI_BASE_URL;
+const PI_BASE_URL = process.env.PI_BASE_URL || process.env.PI_API_BASE_URL;
 const PI_API_KEY = process.env.PI_API_KEY;
 
 async function piFetch(path: string, options?: RequestInit) {
-  if (!PI_BASE_URL) throw new Error("Missing PI_API_BASE_URL");
+  if (!PI_BASE_URL) throw new Error("Missing PI_BASE_URL or PI_API_BASE_URL");
   if (!PI_API_KEY) throw new Error("Missing PI_API_KEY");
 
   const res = await fetch(`${PI_BASE_URL}${path}`, {
     ...options,
     headers: {
+      // Must match server/brand/middleware_api_key.js (x-api-key + INTERNAL_API_KEY | PI_API_KEY)
       "x-api-key": PI_API_KEY,
       "content-type": "application/json",
       ...(options?.headers ?? {}),
