@@ -17,6 +17,8 @@ const NAV_LINKS = [
   { href: "/settings", label: "Settings" },
 ];
 
+const STAFF_APP_URL = process.env.NEXT_PUBLIC_STAFF_APP_URL;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -43,6 +45,16 @@ export default function RootLayout({
                 </Link>
               ))}
             </nav>
+            {STAFF_APP_URL ? (
+              <a
+                href={STAFF_APP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-auto whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                Open Staff App
+              </a>
+            ) : null}
           </div>
         </header>
 

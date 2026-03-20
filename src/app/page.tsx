@@ -1,4 +1,5 @@
 import Link from "next/link";
+const STAFF_APP_URL = process.env.NEXT_PUBLIC_STAFF_APP_URL;
 
 const PORTAL_SECTIONS = [
   {
@@ -65,6 +66,18 @@ export default function HomePage() {
           Your booth-renter recruiting machine. Generate content, manage
           campaigns, track leads, and grow the salon — all in one place.
         </p>
+        {STAFF_APP_URL ? (
+          <div className="mt-5">
+            <a
+              href={STAFF_APP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+            >
+              Open Wix Staff Backend App
+            </a>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
