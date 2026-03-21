@@ -6,6 +6,8 @@ The Next.js portal calls:
 - `GET /brand/top-services`
 - `GET /brand/low-stock-products`
 
+`GET /brand/metrics` includes **`salon_ops_available`** (`true` when `fetchOpsSummary()` succeeded, `false` when the Pi fell back to zeros so the portal can tell “Wix unreachable” from “real zeros”).
+
 If your Pi returns **404** on those paths, wire them in **`routes_brand.js`**.
 
 ## Files (in repo under `server/brand/`)

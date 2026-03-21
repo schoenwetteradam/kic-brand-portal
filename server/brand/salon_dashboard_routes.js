@@ -19,10 +19,10 @@ function registerSalonDashboardRoutes(router) {
   router.get("/metrics", async (_req, res) => {
     try {
       const s = await fetchOpsSummary();
-      return res.json(mapMetrics(s));
+      return res.json({ ...mapMetrics(s), salon_ops_available: true });
     } catch (e) {
       console.warn("GET /brand/metrics fallback:", e.message || e);
-      return res.json(emptyMetrics());
+      return res.json({ ...emptyMetrics(), salon_ops_available: false });
     }
   });
 

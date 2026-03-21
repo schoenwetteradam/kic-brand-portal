@@ -6,6 +6,7 @@ import {
   getLowStock,
   getMetrics,
   getTopServices,
+  type SalonOpsMetrics,
 } from "@/lib/pi-client";
 import { normalizeCampaign, normalizeLead } from "@/lib/brand-normalizers";
 import type { BrandMetrics, Campaign, RecruitmentLead } from "@/types/brand";
@@ -75,6 +76,8 @@ export default async function DashboardPage() {
   let lowStock: Array<{ product_name: string; qty_on_hand: number }> = [];
   let brandMetrics: BrandMetrics = { ...EMPTY_BRAND };
   let salonError = "";
+  /** When false, Pi fell back to zeros because Wix staff `/internal/ops/summary` was not usable. */
+  let salonOpsAvailable: boolean | undefined;
   let recruitingError = "";
   let recentLeads: RecruitmentLead[] = [];
   let recentCampaigns: Campaign[] = [];
@@ -84,11 +87,20 @@ export default async function DashboardPage() {
       "Missing PI_BASE_URL (or PI_API_BASE_URL) or PI_API_KEY in Vercel. Add them under Project → Settings → Environment Variables, then Redeploy.";
   } else {
     try {
-      [salonMetrics, topServices, lowStock] = await Promise.all([
+      const [m, top, low] = await Promise.all([
         getMetrics(),
         getTopServices(),
         getLowStock(),
       ]);
+      const metrics = m as SalonOpsMetrics;
+      salonOpsAvailable = metrics.salon_ops_available;
+      salonMetrics = {
+        bookings_7d: Number(metrics.bookings_7d) || 0,
+        revenue_7d: Number(metrics.revenue_7d) || 0,
+        new_customers_7d: Number(metrics.new_customers_7d) || 0,
+      };
+      topServices = Array.isArray(top) ? top : [];
+      lowStock = Array.isArray(low) ? low : [];
     } catch (e: unknown) {
       salonError =
         e instanceof Error ? e.message : "Failed to load salon data from Pi";
@@ -446,9 +458,29 @@ export default async function DashboardPage() {
 
         {salonEmptyConnected && piReachable && !recruitingError && (
           <p className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
-            Connected to the Pi, but salon metrics are zero or empty. That usually means{" "}
-            <code className="rounded bg-slate-100 px-1">/internal/ops/summary</code> isn’t returning bookings yet, or
-            the staff backend URL/port on the Pi is wrong.
+            {salonOpsAvailable === false ? (
+              <>
+                The Pi could not load data from your Wix staff backend (missing token, wrong URL/port, or{" "}
+                <code className="rounded bg-slate-100 px-1">GET /internal/ops/summary</code> failing). On the{" "}
+                <strong>Pi</strong>, set <code className="rounded bg-slate-100 px-1">WIX_STAFF_API_BASE_URL</code> and{" "}
+                <code className="rounded bg-slate-100 px-1">WIX_STAFF_API_TOKEN</code>, then verify the summary
+                endpoint with curl (see <code className="rounded bg-slate-100 px-1">docs/pi-deploy.md</code>). Salon
+                numbers below are placeholders until that works.
+              </>
+            ) : salonOpsAvailable === true ? (
+              <>
+                Salon summary is connected: the last 7 days have no bookings or revenue in the payload, or top
+                services / low stock lists are empty. If you expected activity, confirm your summary JSON field names
+                match <code className="rounded bg-slate-100 px-1">docs/data-sources-and-ai.md</code>.
+              </>
+            ) : (
+              <>
+                Connected to the Pi, but salon metrics are zero or empty. Either{" "}
+                <code className="rounded bg-slate-100 px-1">/internal/ops/summary</code> isn’t returning data yet, or the
+                staff backend URL/port on the Pi is wrong. (Redeploy the Pi Brand API to get an explicit
+                connected-vs-fallback signal on <code className="rounded bg-slate-100 px-1">/brand/metrics</code>.)
+              </>
+            )}
           </p>
         )}
 

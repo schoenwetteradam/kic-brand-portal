@@ -107,7 +107,15 @@ export default function AgentPage() {
   }
 
   async function updateTaskStatus(id: string, status: "approved" | "rejected") {
+    // Tasks created on Vercel without Pi persistence use synthetic ids; there is no row to PATCH.
+    if (id.startsWith("local_")) {
+      setError("");
+      setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, status } : task)));
+      return;
+    }
+
     try {
+      setError("");
       const res = await fetch(`/api/agent/tasks/${id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
@@ -119,7 +127,20 @@ export default function AgentPage() {
         throw new Error(data.error ?? "Could not update agent task.");
       }
 
-      setTasks((prev) => prev.map((task) => (task.id === id ? data.task : task)));
+      const updated = data.task as AgentTaskRecord;
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === id
+            ? {
+                ...updated,
+                created_at: updated.created_at ?? (updated as { createdAt?: string }).createdAt ?? task.created_at,
+                error_text: updated.error_text ?? (updated as { errorText?: string }).errorText,
+                started_at: updated.started_at ?? (updated as { startedAt?: string }).startedAt,
+                completed_at: updated.completed_at ?? (updated as { completedAt?: string }).completedAt,
+              }
+            : task
+        )
+      );
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not update agent task.");
     }

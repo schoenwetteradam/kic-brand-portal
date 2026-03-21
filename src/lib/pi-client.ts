@@ -10,6 +10,15 @@ import type {
 const PI_BASE_URL = process.env.PI_BASE_URL || process.env.PI_API_BASE_URL;
 const PI_API_KEY = process.env.PI_API_KEY;
 
+/** Pi `/brand/metrics` — includes optional `salon_ops_available` when Pi runs `salon_dashboard_routes.js` (Wix staff summary). */
+export type SalonOpsMetrics = {
+  bookings_7d?: number;
+  revenue_7d?: number;
+  new_customers_7d?: number;
+  top_staff?: unknown[];
+  salon_ops_available?: boolean;
+};
+
 async function piFetch(path: string, options?: RequestInit) {
   if (!PI_BASE_URL) throw new Error("Missing PI_BASE_URL or PI_API_BASE_URL");
   if (!PI_API_KEY) throw new Error("Missing PI_API_KEY");
@@ -33,7 +42,7 @@ async function piFetch(path: string, options?: RequestInit) {
   return res.json();
 }
 
-export async function getMetrics() {
+export async function getMetrics(): Promise<SalonOpsMetrics> {
   return piFetch("/brand/metrics");
 }
 
