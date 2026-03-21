@@ -49,6 +49,8 @@ export type AgentTaskRecord = {
   location: string;
   message: string;
   status: AgentTaskStatus;
+  /** True when this task exists only in the portal session (Vercel OpenAI/fallback); Pi PATCH will 404. */
+  vercel_only?: boolean;
   created_at: string;
   updated_at?: string;
   started_at?: string;

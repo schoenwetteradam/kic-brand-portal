@@ -107,16 +107,22 @@ export default function AgentPage() {
   }
 
   async function updateTaskStatus(id: string, status: "approved" | "rejected") {
-    // Tasks created on Vercel without Pi persistence use synthetic ids; there is no row to PATCH.
-    if (id.startsWith("local_")) {
+    const taskRow = tasks.find((t) => t.id === id);
+
+    const applyLocalStatus = () => {
       setError("");
       setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, status } : task)));
+    };
+
+    // No Pi row: synthetic id, or explicit flag from /api/agent/command, or stale session without refresh.
+    if (id.startsWith("local_") || taskRow?.vercel_only) {
+      applyLocalStatus();
       return;
     }
 
     try {
       setError("");
-      const res = await fetch(`/api/agent/tasks/${id}`, {
+      const res = await fetch(`/api/agent/tasks/${encodeURIComponent(id)}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status }),
@@ -124,6 +130,11 @@ export default function AgentPage() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.task) {
+        const errText = String(data.error ?? "").toLowerCase();
+        if (res.status === 404 || errText.includes("not found")) {
+          applyLocalStatus();
+          return;
+        }
         throw new Error(data.error ?? "Could not update agent task.");
       }
 

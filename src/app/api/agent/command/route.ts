@@ -44,7 +44,7 @@ function buildFallbackResponse({
       title: `Local ${audience} spotlight campaign`,
       channel: "Instagram + Facebook",
       goal: "Attract qualified local beauty pros into a tour funnel",
-      notes: `Showcase booth quality, culture, flexible terms, and why ${locationName} professionals should choose Keeping It cUte.`,
+      notes: `Showcase booth quality, culture, flexible terms, and why ${locationName} professionals should choose Keeping It Cute.`,
     },
     {
       title: "Referral booster campaign",
@@ -167,7 +167,7 @@ function coerceRole(value: unknown): RoleType | "general" {
 }
 
 function buildOpenAIPrompt(input: Required<Pick<AgentCommandRequest, "mode" | "role" | "location">> & { message: string }) {
-  return `You are the autonomous growth agent for Keeping It cUte Salon & Spa.
+  return `You are the autonomous growth agent for Keeping It Cute Salon & Spa.
 
 Business goal:
 - Attract more booth-rental leads
@@ -281,6 +281,7 @@ export async function POST(req: NextRequest) {
         const parsed = JSON.parse(data.choices[0].message.content) as AgentCommandResponse;
         const immediateTask: AgentTaskRecord = {
           id: `local_${Date.now()}`,
+          vercel_only: true,
           mode,
           role,
           location,
@@ -306,6 +307,7 @@ export async function POST(req: NextRequest) {
 
   const immediateTask: AgentTaskRecord = {
     id: `local_${Date.now()}`,
+    vercel_only: true,
     mode,
     role,
     location,
