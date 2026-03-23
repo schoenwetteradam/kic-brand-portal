@@ -4,10 +4,12 @@ const pool = require("./db");
 const { requireInternalApiKey } = require("./middleware_api_key");
 const { generateBrandContent } = require("./openai_brand");
 const { generateAgentTaskResult } = require("./agent_tasks");
+const { registerSalonDashboardRoutes } = require("./salon_dashboard_routes");
 
 const router = express.Router();
 
 router.use(requireInternalApiKey);
+registerSalonDashboardRoutes(router);
 
 router.get("/dashboard", async (_req, res) => {
   try {

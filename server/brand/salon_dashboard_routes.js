@@ -1,4 +1,10 @@
-const { fetchOpsSummary, mapMetrics, mapTopServices, mapLowStock } = require("./wix_staff_client");
+const {
+  fetchOpsSummary,
+  mapMetrics,
+  mapTopServices,
+  mapLowStock,
+  getOpsSummaryEndpoint,
+} = require("./wix_staff_client");
 
 const emptyMetrics = () => ({
   bookings_7d: 0,
@@ -17,12 +23,28 @@ const emptyLowStock = () => [];
  */
 function registerSalonDashboardRoutes(router) {
   router.get("/metrics", async (_req, res) => {
+    const endpoint = getOpsSummaryEndpoint();
     try {
       const s = await fetchOpsSummary();
-      return res.json({ ...mapMetrics(s), salon_ops_available: true });
+      return res.json({
+        ...mapMetrics(s),
+        salon_ops_available: true,
+        salon_ops_status: "connected",
+        salon_ops_source: "wix_staff_summary",
+        salon_ops_error: null,
+        salon_ops_endpoint: endpoint,
+      });
     } catch (e) {
-      console.warn("GET /brand/metrics fallback:", e.message || e);
-      return res.json({ ...emptyMetrics(), salon_ops_available: false });
+      const message = e instanceof Error ? e.message : String(e);
+      console.warn("GET /brand/metrics fallback:", message);
+      return res.json({
+        ...emptyMetrics(),
+        salon_ops_available: false,
+        salon_ops_status: "fallback",
+        salon_ops_source: "fallback_zero",
+        salon_ops_error: message,
+        salon_ops_endpoint: endpoint,
+      });
     }
   });
 

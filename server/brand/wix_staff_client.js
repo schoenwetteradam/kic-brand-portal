@@ -10,12 +10,11 @@ function num(v) {
 }
 
 async function fetchOpsSummary() {
-  const base = (process.env.WIX_STAFF_API_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
+  const url = getOpsSummaryEndpoint();
   const token = process.env.WIX_STAFF_API_TOKEN || "";
   if (!token) {
     throw new Error("WIX_STAFF_API_TOKEN is not set");
   }
-  const url = `${base}/internal/ops/summary`;
   const res = await fetch(url, {
     headers: {
       authorization: `Bearer ${token}`,
@@ -27,6 +26,14 @@ async function fetchOpsSummary() {
     throw new Error(`Wix ops/summary failed: ${res.status} ${text}`);
   }
   return res.json();
+}
+
+function getOpsSummaryBaseUrl() {
+  return (process.env.WIX_STAFF_API_BASE_URL || DEFAULT_BASE).replace(/\/$/, "");
+}
+
+function getOpsSummaryEndpoint() {
+  return `${getOpsSummaryBaseUrl()}/internal/ops/summary`;
 }
 
 function mapMetrics(s) {
@@ -67,6 +74,7 @@ function mapLowStock(s) {
 
 module.exports = {
   fetchOpsSummary,
+  getOpsSummaryEndpoint,
   mapMetrics,
   mapTopServices,
   mapLowStock,
